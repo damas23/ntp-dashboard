@@ -1,0 +1,61 @@
+name: ntp-dashboard
+
+services:
+  ntp-dashboard:
+    build:
+      context: .
+      # The host firewall drops forwarded traffic from the default bridge, so the
+      # build uses the host network to reach the Debian and PyPI mirrors.
+      network: host
+    image: ntp-dashboard:1.0
+    container_name: ntp-dashboard
+    restart: unless-stopped
+
+    # Host _chrony user (uid 113 / gid 122): required to query "chronyc clients".
+    user: "113:122"
+
+    # Reachable only from the host; the shared nginx proxy connects to it.
+    ports:
+      - "127.0.0.1:5005:5000"
+
+    volumes:
+      # chronyc talks to chronyd through this socket directory (needs write
+      # access: chronyc creates its own reply socket there).
+      - type: bind
+        source: /run/chrony
+        target: /run/chrony
+        bind:
+          create_host_path: false
+      # Time History reads chrony's logs.
+      - type: bind
+        source: /var/log/chrony
+        target: /var/log/chrony
+        read_only: true
+        bind:
+          create_host_path: false
+
+    environment:
+      TZ: Asia/Jakarta
+
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 512m
+    pids_limit: 256
+
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:5000/data', timeout=8)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

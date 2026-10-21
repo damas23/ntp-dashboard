@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Documentation | Indo Raya Tenaga NTP Server</title>
+    <script>
+        try { document.documentElement.dataset.theme=localStorage.getItem('ticc_dash_theme')||'dark'; } catch(e) {}
+        window.addEventListener('storage',e=>{
+            if(e.key==='ticc_dash_theme') document.documentElement.dataset.theme=e.newValue||'dark';
+        });
+    </script>
+    <style>
+        :root{color-scheme:dark;--bg:#0b111b;--card:#141e2d;--text:#e5edf7;--muted:#a2b1c6;--line:#2a384d;--accent:#5eead4;}
+        [data-theme="light"]{color-scheme:light;--bg:#f1f5f9;--card:#fff;--text:#0f172a;--muted:#526176;--line:#d6dee9;--accent:#087b73;}
+        *{box-sizing:border-box;}
+        body{margin:0;background:var(--bg);color:var(--text);font:15px/1.7 system-ui,sans-serif;}
+        main{max-width:940px;margin:auto;padding:28px 24px 40px;}
+        header{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:22px;}
+        header img{width:160px;height:auto;background:white;padding:8px;border-radius:10px;}
+        h1{font-size:1.8rem;line-height:1.2;margin:0 0 6px;}
+        header p{margin:0;color:var(--muted);}
+        nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px;}
+        nav a,button{border:1px solid var(--line);border-radius:8px;padding:7px 12px;background:var(--card);color:var(--text);font:inherit;text-decoration:none;cursor:pointer;}
+        a{color:var(--accent);}
+        a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:3px;}
+        section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 24px;margin-bottom:16px;scroll-margin-top:16px;}
+        h2{font-size:1.2rem;margin:0 0 12px;color:var(--accent);}
+        h3{font-size:1rem;margin:18px 0 6px;}
+        p{margin:8px 0;}
+        ul,ol{padding-left:22px;}
+        li{margin:6px 0;}
+        dt{font-weight:700;margin-top:12px;} dd{margin:2px 0 12px;color:var(--muted);}
+        code{font-size:.9em;overflow-wrap:anywhere;}
+        .note{border-left:3px solid var(--accent);padding-left:14px;color:var(--muted);}
+        footer{color:var(--muted);font-size:.85rem;text-align:center;margin-top:24px;}
+        @media(max-width:520px){main{padding:18px 12px;}section{padding:16px;}h1{font-size:1.5rem;}}
+        @media print{nav,button{display:none;}body{background:white;color:black;}section{break-inside:avoid;border-color:#aaa;}h2,a,dd,footer,.note{color:black;}}
+    </style>
+</head>
+<body>
+<main>
+    <header>
+        <img src="/static/img/logo-indoraya-color.png" alt="Indo Raya Tenaga">
+        <div><h1>Documentation</h1><p>Indo Raya Tenaga NTP Server · Dashboard guide</p></div>
+    </header>
+    <nav aria-label="Documentation sections">
+        <a href="#quick-start">Quick start</a><a href="#health">Server health</a>
+        <a href="#clients">Clients</a><a href="#history">Time history</a>
+        <a href="#troubleshooting">Troubleshooting</a>
+        <button type="button" id="print-docs">Print / PDF</button>
+        <button type="button" id="close-docs">Close window</button>
+    </nav>
+    <section id="quick-start">
+        <h2>Quick start</h2>
+        <ol>
+            <li>Check <strong>NTP Server Health</strong> for synchronization, source, and system offset.</li>
+            <li>Click a <strong>Client Overview</strong> card to open a popup window with its full client list. Total Clients shows all addresses; OK, Stale, Warning, and Critical show only that status. These lists refresh automatically and offer address search and sorting. Clicking another card reuses the client popup window.</li>
+            <li>Client subnet groups start <strong>collapsed on every page load</strong>. Click a subnet header to show its addresses, then an address to see its packet details.</li>
+            <li>The expand/collapse switch opens or closes all client groups and details. Manual changes last while the page is open, including automatic refreshes.</li>
+            <li>Use the search box to filter addresses or statuses. Matching groups remain collapsed until you open them. Use the sort menu to order their clients.</li>
+            <li>Scroll below the clients to <strong>Time History</strong>. Live data refreshes about every 5 seconds; history refreshes every 60 seconds.</li>
+        </ol>
+        <p>The theme switch saves your light/dark preference. Information shows project credits; Documentation opens this reusable window.</p>
+    </section>
+    <section id="health">
+        <h2>Understanding server health</h2>
+        <dl>
+            <dt>Sync state and sync source</dt>
+            <dd>Whether chrony is synchronized to an upstream time source, and which reference it is using. A local fallback clock is not proof of synchronization to external time.</dd>
+            <dt>Stratum</dt>
+            <dd>Distance from a reference clock in the NTP hierarchy. Stratum 1 connects directly to a reference; stratum 2 synchronizes to stratum 1, and so on. A lower stratum alone does not guarantee better accuracy. This server is configured with a stratum-10 local fallback.</dd>
+            <dt>System offset</dt>
+            <dd>The remaining difference between the system clock and chrony's estimated NTP time. Small values near zero are generally desirable; also check synchronization, source quality, and whether the data is current.</dd>
+            <dt>Leap status</dt>
+            <dd>Normal means no leap-second adjustment is announced. Insert/Delete indicates an announced leap second; Not synchronised means time synchronization is unavailable.</dd>
+            <dt>NTP packets</dt>
+            <dd>Chrony's received and dropped packet counters. These are counts, not a packets-per-second rate.</dd>
+        </dl>
+        <p class="note">The server's own synchronization and a client's request activity are different measurements. Seeing a client here does not prove that the client's clock is accurate.</p>
+    </section>
+    <section id="clients">
+        <h2>Client table and status labels</h2>
+        <p>Each subnet header shows a device count and the most severe status among its matching clients. Summary cards reflect the dashboard's current search filter. Clicking a card opens all clients of that status in a popup window, independent of the dashboard search; the popup has its own search.</p>
+        <dl>
+            <dt>NTP / Drop / Cmd</dt><dd>Received NTP requests, dropped NTP requests, and command packets reported for the client. Counters can reset when chrony restarts or client records are removed.</dd>
+            <dt>Interval</dt><dd>Estimated request interval in log₂(seconds): 6 means about 64 seconds, 10 about 1,024 seconds. Unknown values are not usable as a polling interval.</dd>
+            <dt>Last seen / Stale after</dt><dd>Time since the last NTP request, and the dashboard's inactivity threshold. The threshold is the greater of 300 seconds or three estimated request intervals; unknown intervals use 300 seconds.</dd>
+        </dl>
+        <ul>
+            <li><strong>OK:</strong> no reported drops, with a request inside the inactivity threshold.</li>
+            <li><strong>Stale:</strong> no reported drops, but the last request exceeds the threshold.</li>
+            <li><strong>Warning:</strong> 1–9 dropped requests, or missing/invalid drop or last-seen values.</li>
+            <li><strong>Critical:</strong> 10 or more dropped requests.</li>
+        </ul>
+        <p class="note">These are dashboard rules based on request activity, not a measurement of client clock error. Drop counts are cumulative: a warning can remain after an earlier problem has stopped.</p>
+    </section>
+    <section id="history">
+        <h2>Clock offset, frequency drift, and logs</h2>
+        <h3>Clock offset: how far apart are the clocks?</h3>
+        <p>An offset estimates a difference in time. For example, 200 µs is 0.2 milliseconds, or 0.0002 seconds. The history chart uses the offset recorded at chrony's tracking updates; it is not the same field as the live System offset card.</p>
+        <p><strong>Units:</strong> 1 second = 1,000 milliseconds (ms) = 1,000,000 microseconds (µs).</p>
+        <h3>Frequency drift: how fast does the clock gain or lose time?</h3>
+        <p>Frequency is measured in parts per million (<strong>ppm</strong>). One ppm corresponds to one microsecond per second, or 86.4 milliseconds per day. An uncorrected clock with 4 ppm drift would gain or lose about 0.346 seconds per day.</p>
+        <p>Chrony's frequency estimate describes the clock's rate error without its correction. Positive means naturally fast; negative means naturally slow. Chrony compensates for that error, so a nonzero frequency value can coexist with an offset close to zero.</p>
+        <p>Chrony normally adjusts the clock rate gradually. It can also step the clock when configured to do so, for example during startup. Look for sustained changes and synchronization loss rather than judging a single sample.</p>
+        <h3>History table and sample range</h3>
+        <p>The history table displays <strong>20 records per page</strong>. Use Previous and Next below the table to browse older records. The page indicator shows the current page and record range. Automatic refresh keeps the current page number where possible; changing the sample range returns to page 1. Charts still show the full selected sample range.</p>
+        <p>Rows show timestamps in both <strong>UTC</strong> and <strong>UTC +7 (WIB)</strong>, followed by source, leap code, stratum, offset, and frequency (ppm), newest first. The UTC +7 column automatically adds seven hours, including date changes across midnight. Leap code <code>N</code> means normal; <code>?</code> means unsynchronized.</p>
+        <p>The selector requests a sample count, not a fixed number of hours. Only available recent entries are shown; the current API caps tracking history at 180 entries, so selecting 400 cannot yet show more than 180. Entries arrive when chrony updates tracking, not on a guaranteed 64-second schedule.</p>
+        <h3>Log files and retention</h3>
+        <ul>
+            <li><code>/var/log/chrony/tracking.log</code> — server tracking updates, used by the history charts and table.</li>
+            <li><code>/var/log/chrony/measurements.log</code> — measurements from upstream sources.</li>
+            <li><code>/var/log/chrony/statistics.log</code> — per-source statistical estimates.</li>
+        </ul>
+        <p>Logs rotate weekly with four rotated copies retained. The dashboard reads the current files only; archived logs are not included, so the displayed history can shorten after rotation. Data from before logging was enabled is unavailable.</p>
+    </section>
+    <section id="troubleshooting">
+        <h2>Troubleshooting</h2>
+        <dl>
+            <dt>No client addresses visible?</dt><dd>Click a subnet header or use Expand all. This compact default keeps Time History close to the client section.</dd>
+            <dt>Not synced or stratum 10?</dt><dd>After a restart, allow time for chrony to collect samples. If it persists, an administrator should check upstream reachability and <code>chronyc tracking</code> / <code>chronyc sources -v</code>.</dd>
+            <dt>Data refresh failed?</dt><dd>Check the last successful update. Previously displayed values may be stale. An administrator can check <code>systemctl status chrony ticc-dash nginx</code>.</dd>
+            <dt>Empty or sparse history?</dt><dd>Wait for tracking updates. Logging may have just started or rotated. An administrator can check the log files and <code>journalctl -u chrony -u ticc-dash</code>.</dd>
+            <dt>Documentation opens in a tab?</dt><dd>The browser controls whether the requested popup is a window or tab. The page also works directly at <a href="/documentation">/documentation</a>.</dd>
+        </dl>
+        <p><a href="/" target="_blank" rel="noopener">Open dashboard</a></p>
+    </section>
+    <footer>Dashboard based on <a href="https://github.com/anoniemerd/ticc-dash" target="_blank" rel="noopener">TICC-DASH</a>
+        by <strong>Anoniemerd</strong> · MIT License · <a href="https://ticc-dash.org" target="_blank" rel="noopener">ticc-dash.org</a></footer>
+</main>
+<script>
+    document.getElementById('print-docs').addEventListener('click',()=>window.print());
+    document.getElementById('close-docs').addEventListener('click',()=>{
+        window.close();
+        document.getElementById('close-docs').textContent='You can close this tab';
+    });
+</script>
+</body>
+</html>

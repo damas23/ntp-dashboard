@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+
+# Local/backup artifacts
+*.bak
+*.bak.*
+*.backup
+*.log
+
+# Never commit TLS material or secrets
+*.key
+*.pem
+certs/

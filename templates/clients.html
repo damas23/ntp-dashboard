@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ status }} Clients | Indo Raya Tenaga NTP Server</title>
+    <script>
+        try { document.documentElement.dataset.theme=localStorage.getItem('ticc_dash_theme')||'dark'; } catch(e) {}
+        window.addEventListener('storage',e=>{
+            if(e.key==='ticc_dash_theme') document.documentElement.dataset.theme=e.newValue||'dark';
+        });
+    </script>
+    <style>
+        :root{color-scheme:dark;--bg:#0b111b;--card:#141e2d;--text:#e5edf7;--muted:#a2b1c6;--line:#2a384d;--accent:#5eead4;--ok:#4ade80;--stale:#7dd3fc;--warn:#fbbf24;--bad:#f87171;}
+        [data-theme="light"]{color-scheme:light;--bg:#f1f5f9;--card:#fff;--text:#0f172a;--muted:#526176;--line:#d6dee9;--accent:#087b73;--ok:#15803d;--stale:#0369a1;--warn:#92400e;--bad:#b91c1c;}
+        *{box-sizing:border-box;}
+        body{margin:0;background:radial-gradient(ellipse at top right,rgba(56,189,248,.08),transparent 65%),var(--bg);color:var(--text);font:15px/1.6 system-ui,sans-serif;min-height:100vh;}
+        main{max-width:1240px;margin:auto;padding:28px 24px 40px;}
+        header{display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin-bottom:24px;}
+        header img{width:160px;height:auto;background:white;padding:8px;border-radius:10px;}
+        h1{font-size:clamp(1.6rem,4vw,2.2rem);line-height:1.2;margin:0 0 6px;}
+        header p{margin:0;color:var(--muted);}
+        .back{margin-left:auto;}
+        a{color:var(--accent);}
+        nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;}
+        nav a{border:1px solid var(--line);border-radius:999px;padding:7px 16px;background:var(--card);color:var(--muted);text-decoration:none;font-weight:600;}
+        nav a:hover,nav a[aria-current="page"]{border-color:var(--accent);color:var(--accent);}
+        a:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:3px;}
+        .controls{display:flex;gap:12px;flex-wrap:wrap;align-items:end;margin-bottom:16px;}
+        label{display:flex;flex-direction:column;gap:5px;color:var(--muted);font-size:.82rem;}
+        input,select{padding:9px 12px;border:1px solid var(--line);border-radius:9px;background:var(--card);color:var(--text);font:inherit;}
+        input{min-width:240px;}
+        .summary{margin-left:auto;text-align:right;color:var(--muted);font-size:.84rem;}
+        #count{font-size:1rem;font-weight:700;color:var(--text);}
+        .table-wrap{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 28px rgba(0,0,0,.12);}
+        table{width:100%;border-collapse:collapse;white-space:nowrap;}
+        th,td{padding:12px 16px;border-bottom:1px solid var(--line);text-align:left;}
+        th{color:var(--muted);text-transform:uppercase;font-size:.72rem;letter-spacing:.05em;}
+        tr:last-child td{border-bottom:0;}
+        tbody tr:hover{background:rgba(128,128,128,.05);}
+        .num{text-align:right;font-variant-numeric:tabular-nums;}
+        .addr{font-family:ui-monospace,monospace;}
+        .badge{font-weight:700;font-size:.8rem;padding:4px 9px;border:1px solid currentColor;border-radius:999px;}
+        [data-status="OK"]{color:var(--ok);} [data-status="Stale"]{color:var(--stale);}
+        [data-status="Warning"]{color:var(--warn);} [data-status="Critical"]{color:var(--bad);}
+        #empty{padding:28px;text-align:center;color:var(--muted);}
+        #error{padding:12px 16px;border:1px solid var(--warn);border-radius:10px;color:var(--warn);margin-bottom:16px;}
+        footer{color:var(--muted);font-size:.8rem;text-align:center;margin-top:24px;}
+        @media(max-width:600px){main{padding:18px 12px;}.back{margin-left:0;}.summary{margin-left:0;text-align:left;}input{min-width:0;width:100%;}}
+    </style>
+</head>
+<body>
+<main>
+    <header>
+        <img src="/static/img/logo-indoraya-color.png" alt="Indo Raya Tenaga">
+        <div><h1>{{ status }} Clients</h1><p>Indo Raya Tenaga NTP Server · Live address list</p></div>
+        <a class="back" href="/">← Dashboard</a>
+    </header>
+    <nav aria-label="Filter clients by status">
+        {% for choice in ['All', 'OK', 'Stale', 'Warning', 'Critical'] %}
+        <a href="{{ url_for('client_list', status=choice) }}"{% if choice == status %} aria-current="page"{% endif %}>{{ choice }}</a>
+        {% endfor %}
+    </nav>
+    <div class="controls">
+        <label>Search address<input id="search" type="search" placeholder="IP address or hostname…" autocomplete="off"></label>
+        <label>Sort by<select id="sort"><option value="address">Address</option><option value="drops">Drops (highest first)</option><option value="recent">Last seen (most recent)</option></select></label>
+        <div class="summary" role="status"><div id="count">Loading clients…</div><div id="updated">Refreshes every 5 seconds</div></div>
+    </div>
+    <div id="error" role="alert" hidden></div>
+    <div class="table-wrap" role="region" aria-label="Client addresses" tabindex="0">
+        <table aria-label="{{ status }} client addresses">
+            <thead><tr><th scope="col">Address</th><th scope="col">Status</th><th scope="col" class="num">NTP</th><th scope="col" class="num">Drop</th><th scope="col" class="num">Cmd</th><th scope="col" class="num" title="Estimated request interval in log₂(seconds)">Interval (log₂ s)</th><th scope="col">Last seen</th></tr></thead>
+            <tbody id="client-list"></tbody>
+        </table>
+        <div id="empty" hidden></div>
+    </div>
+    <footer>Dashboard based on <a href="https://github.com/anoniemerd/ticc-dash" target="_blank" rel="noopener">TICC-DASH</a>
+        by <strong>Anoniemerd</strong> · MIT License · <a href="/documentation" target="_blank" rel="noopener">Documentation</a></footer>
+</main>
+<script>
+    const statusFilter={{ status|tojson }};
+    const $=id=>document.getElementById(id);
+    let clients=[], loaded=false;
+    function lastSeen(value){
+        const seconds=Number(value);
+        if(value==null || value==='' || !Number.isFinite(seconds) || seconds<0) return 'Unknown';
+        if(seconds<60) return Math.floor(seconds)+' sec ago';
+        if(seconds<3600) return Math.floor(seconds/60)+' min ago';
+        if(seconds<86400) return Math.floor(seconds/3600)+' hr ago';
+        return Math.floor(seconds/86400)+' d ago';
+    }
+    function numeric(value,fallback){
+        const n=Number(value); return value!=null && value!=='' && Number.isFinite(n) && n>=0?n:fallback;
+    }
+    function renderClients(){
+        if(!loaded) return;
+        const matching=clients.filter(r=>statusFilter==='All' || r.Status===statusFilter);
+        const query=$('search').value.trim().toLowerCase();
+        const rows=matching.filter(r=>String(r.addr||'').toLowerCase().includes(query));
+        const sort=$('sort').value;
+        rows.sort((a,b)=>{
+            if(sort==='drops') return numeric(b.Drop,0)-numeric(a.Drop,0);
+            if(sort==='recent') return numeric(a.Last,Infinity)-numeric(b.Last,Infinity);
+            return String(a.addr||'').localeCompare(String(b.addr||''),undefined,{numeric:true,sensitivity:'base'});
+        });
+        const fragment=document.createDocumentFragment();
+        rows.forEach(r=>{
+            const tr=document.createElement('tr');
+            const values=[r.addr,r.Status,r.NTP,r.Drop,r.Cmd,r.Int,lastSeen(r.Last)];
+            values.forEach((value,index)=>{
+                const td=document.createElement('td');
+                if(index===0) td.className='addr';
+                if(index>=2 && index<=5) td.className='num';
+                if(index===1){
+                    const badge=document.createElement('span');badge.className='badge';
+                    badge.dataset.status=r.Status;badge.textContent=value||'Unknown';td.appendChild(badge);
+                } else td.textContent=value==null || value===''?'-':String(value);
+                tr.appendChild(td);
+            });
+            fragment.appendChild(tr);
+        });
+        $('client-list').replaceChildren(fragment);
+        $('count').textContent=rows.length+' of '+matching.length+' '+(statusFilter==='All'?'':statusFilter.toLowerCase()+' ')+'clients';
+        $('empty').hidden=rows.length>0;
+        $('empty').textContent=query?'No addresses match your search.':(statusFilter==='All'?'No clients reported.':'No '+statusFilter.toLowerCase()+' clients reported.');
+    }
+    async function refreshClients(){
+        const controller=new AbortController();
+        const timeout=setTimeout(()=>controller.abort(),8000);
+        try{
+            const response=await fetch('/data',{cache:'no-store',signal:controller.signal});
+            if(!response.ok) throw new Error('Collection failed');
+            const payload=await response.json();
+            if(payload.error || !Array.isArray(payload.clients_parsed)) throw new Error('Invalid data');
+            clients=payload.clients_parsed; loaded=true; renderClients();
+            $('updated').textContent='Updated '+new Date().toLocaleTimeString()+' · refreshes every 5s';
+            $('error').hidden=true;
+        } catch(error){
+            $('error').textContent=loaded?'Refresh failed. Displayed clients may be out of date; retrying automatically.':'Could not load clients. Retrying automatically.';
+            $('error').hidden=false;
+            if(!loaded) $('count').textContent='Client data unavailable';
+        } finally{clearTimeout(timeout);setTimeout(refreshClients,5000);}
+    }
+    $('search').addEventListener('input',renderClients);
+    $('sort').addEventListener('change',renderClients);
+    refreshClients();
+</script>
+</body>
+</html>

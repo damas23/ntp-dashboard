@@ -1,0 +1,4 @@
+**/*.bak*
+**/*.backup
+**/__pycache__
+venv
